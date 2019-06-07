@@ -15,7 +15,7 @@ public class VectorTeleOp extends OpMode {
     Servo markerServo, dumperServo, cameraServo;
     CRServo collectorServo, collectorExtenderServo;
     DcMotor backLeft,backRight, frontLeft, frontRight, liftMotor, collectorMove, collectorExtenderDc,mineralLift;
-    TouchSensor liftUpSensor, liftDownSensor;
+    TouchSensor liftUpSensor, liftDownSensor, extenderSensor;
 
     boolean canWrite = false;
     boolean gamepad2RightBumperPressed = false;
@@ -26,7 +26,7 @@ public class VectorTeleOp extends OpMode {
 
     final double TOLERANCE = 0.5;
     final double collectorMin = -10;
-    final double collectorMax = 370;
+    final double collectorMax = 600;
 
     /*
     final double MAX_CM = 935;
@@ -57,6 +57,7 @@ public class VectorTeleOp extends OpMode {
 
         liftUpSensor = hardwareMap.touchSensor.get("liftUpSensor");
         liftDownSensor = hardwareMap.touchSensor.get("liftDownSensor");
+        extenderSensor = hardwareMap.touchSensor.get ("extenderSensor");
 
         liftMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         collectorExtenderDc.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -117,6 +118,10 @@ public class VectorTeleOp extends OpMode {
             //telemetry.addData("lift motor: ", liftMotor.getCurrentPosition());
             currentCEVal = collectorExtenderDc.getCurrentPosition();
         }
+        telemetry.addData("extender ", currentCEVal);
+        telemetry.addData("lift up sensor", liftUpSensor.getValue());
+        telemetry.addData("extender sensor", extenderSensor.getValue());
+        telemetry.addData("collector extender", collectorExtenderDc.getCurrentPosition());
         telemetry.update();
     }
 
@@ -138,11 +143,7 @@ public class VectorTeleOp extends OpMode {
             backLeft.setPower((gamepad1.right_stick_y + gamepad1.right_stick_x) - gamepad1.left_stick_x / 2);
         }
 
-        telemetry.addData("frontRight", frontRight.getPower());
-        telemetry.addData("frontLeft", frontLeft.getPower());
-        telemetry.addData("backRight", backRight.getPower());
-        telemetry.addData("backLeft", backLeft.getPower());
-        telemetry.update();
+
     }
 
     private void setLiftMotor() {
@@ -153,8 +154,7 @@ public class VectorTeleOp extends OpMode {
         else
             liftMotor.setPower(0);
 
-        telemetry.addData("lift motor", liftMotor.getCurrentPosition());
-        telemetry.update();
+
     }
 
     private void setCollectorMove(){
@@ -172,6 +172,7 @@ public class VectorTeleOp extends OpMode {
     private void setCollectorExtender(){
         if(gamepad2.right_stick_y > TOLERANCE) {
             if(currentCEVal <= collectorMax) {
+                collectorExtenderDc.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                 collectorExtenderDc.setPower(gamepad2.right_stick_y / 5);
                 collectorExtenderServo.setPower(gamepad2.right_stick_y);
             } else{
@@ -179,14 +180,17 @@ public class VectorTeleOp extends OpMode {
                 collectorExtenderServo.setPower(gamepad2.right_stick_y);
             }
         } else if(gamepad2.right_stick_y < -TOLERANCE){
-            if(collectorMin <= currentCEVal) {
+            if(extenderSensor.getValue()==0) {
+                collectorExtenderDc.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                 collectorExtenderDc.setPower(gamepad2.right_stick_y / 5);
                 collectorExtenderServo.setPower(gamepad2.right_stick_y);
             } else{
                 collectorExtenderDc.setPower(0);
                 collectorExtenderServo.setPower(gamepad2.right_stick_y);
+                collectorExtenderDc.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             }
         } else{
+
             collectorExtenderDc.setPower(0);
             collectorExtenderServo.setPower(0);
         }
